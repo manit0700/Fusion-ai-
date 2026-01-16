@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flask_app
+    image: project-app:latest  # Tag the image with a meaningful name
+    ports:
+      - "5000:5000"  # Map port 5000 of the container to 5000 on the host
+    depends_on:
+      - db  # Ensure the database starts before the app
+    environment:
+      FLASK_ENV: development
+      DATABASE_HOST: db
+      DATABASE_USER: root  # Root user
+      DATABASE_PASSWORD: 123  # Root password
+      DATABASE_NAME: telecom_db
+    volumes:
+      - .:/app  # Mount the current directory to the /app directory in the container
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_server
+    ports:
+      - "3306:3306"  # Map port 3306 of the container to 3306 on the host
+    environment:
+      MYSQL_ROOT_PASSWORD: 123  # Root password for MySQL
+      MYSQL_DATABASE: telecom_db  # Initial database name
+    volumes:
+      - db_data:/var/lib/mysql  # Persistent volume for database data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Mount init.sql for initialization
+
+volumes:
+  db_data:
