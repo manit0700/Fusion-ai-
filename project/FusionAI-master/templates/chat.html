@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Agent</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Header Section -->
+    <div id="header">
+        React Agent
+    </div>
+
+    <!-- Chat Box Section -->
+    <div id="chat-box" class="{{ 'centered' if initial else 'flex-start' }}" data-initial="{{ 'true' if initial else 'false' }}">
+        {% for message in conversation %}
+            <div class="message {{ message.type }}">
+                {{ message.message }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Input Form Section -->
+    <form id="input-form" action="/query" method="post">
+        <input type="text" id="query" name="query" placeholder="Type your message..." required>
+        <button type="submit">Send</button>
+    </form>
+
+    <!-- JavaScript for Auto-Scroll -->
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        // Read the data-initial attribute
+        const isInitial = chatBox.getAttribute('data-initial') === 'true';
+        if (!isInitial) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
