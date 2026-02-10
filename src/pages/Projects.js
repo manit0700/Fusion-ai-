@@ -1,122 +1,81 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import {
   Container,
   Typography,
   Grid,
   Card,
   CardContent,
+  CardMedia,
+  CardActions,
   Button,
   Box,
-  Stack,
-  Chip,
 } from '@mui/material';
 import profile from '../config/profile';
 
 const Projects = () => {
-  const { githubUsername, githubUrl, projects } = profile;
-  const [allRepos, setAllRepos] = useState([]);
-  const [loadingRepos, setLoadingRepos] = useState(true);
+  const { githubUsername, githubUrl } = profile;
+  const gh = (repo) =>
+    githubUsername ? `https://github.com/${githubUsername}/${repo}` : githubUrl;
 
-  const gh = useCallback((repo) => {
-    if (!repo) return null;
-    if (repo.startsWith('http://') || repo.startsWith('https://')) return repo;
-    return githubUsername ? `https://github.com/${githubUsername}/${repo}` : githubUrl;
-  }, [githubUrl, githubUsername]);
-
-  const normalize = (value = '') => value.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const resolveRepoUrl = useCallback((project) => {
-    if (!project) return null;
-    if (project.repo) {
-      const direct = gh(project.repo);
-      if (direct && (project.repo.startsWith('http://') || project.repo.startsWith('https://'))) {
-        return direct;
-      }
-    }
-    return project.repo ? gh(project.repo) : githubUrl;
-  }, [gh, githubUrl]);
-
-  useEffect(() => {
-    if (!githubUsername) {
-      setLoadingRepos(false);
-      return;
-    }
-    fetch(`https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=100`)
-      .then((r) => r.json())
-      .then((data) => {
-        const repos = Array.isArray(data) ? data : [];
-        const filtered = repos.filter((repo) => !repo.fork);
-        setAllRepos(filtered);
-      })
-      .catch(() => setAllRepos([]))
-      .finally(() => setLoadingRepos(false));
-  }, [githubUsername]);
-
-  const describeRepo = (repo) => {
-    if (!repo) return 'Project repository.';
-    if (repo.description && repo.description.trim()) return repo.description;
-
-    const pretty = repo.name
-      .replace(/[-_]+/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-      .trim();
-    const slug = repo.name.toLowerCase();
-
-    const keywordRules = [
-      { test: /stock|portfolio|invest/, desc: 'Stock analysis + backtesting.' },
-      { test: /image|ocr|text.*convert|convert.*text/, desc: 'OCR image-to-text tool.' },
-      { test: /email|mailer|mail/, desc: 'Email generation utility.' },
-      { test: /cartoon|toon/, desc: 'Photo cartoonification tool.' },
-      { test: /price|pricing|cost/, desc: 'Price tracking tool.' },
-      { test: /framework|starter|boiler/, desc: 'Modular app framework.' },
-      { test: /assistant|agent|rag|llama|fusion/, desc: 'RAG-based AI assistant.' },
-      { test: /converter|convert/, desc: `Conversion tool for ${pretty}.` },
-    ];
-
-    const match = keywordRules.find((rule) => rule.test.test(slug));
-    if (match) return match.desc;
-
-    if (repo.language) {
-      return `${repo.language} project for ${pretty}.`;
-    }
-    return `Project for ${pretty}.`;
-  };
-
-  const repoBullets = (repo) => [
-    `Primary language: ${repo.language || 'Not specified'}`,
-    `Stars: ${repo.stargazers_count ?? 0}`,
-    `Updated: ${new Date(repo.updated_at).toLocaleDateString()}`,
+  const projects = [
+    {
+      title: 'ABCframework',
+      description:
+        'A framework with separate frontend and backend. Built with React and Node; focuses on modularity and scalability.',
+      image: 'https://via.placeholder.com/400x300',
+      technologies: ['React', 'Node.js'],
+      liveLink: '#',
+      githubLink: gh('ABCframework'),
+    },
+    {
+      title: 'CartoonifyFix',
+      description:
+        'iOS project to cartoonify photos and refine outputs with better edge detection.',
+      image: 'https://via.placeholder.com/400x300',
+      technologies: ['Swift', 'iOS'],
+      liveLink: '#',
+      githubLink: gh('CartoonifyFix'),
+    },
+    {
+      title: 'Convert_Photos_Cartoon_Images',
+      description:
+        'Converts photos into cartoon images using image processing techniques.',
+      image: 'https://via.placeholder.com/400x300',
+      technologies: ['Python', 'OpenCV'],
+      liveLink: '#',
+      githubLink: gh('Convert_Photos_Cartoon_Images'),
+    },
+    {
+      title: 'Email_Generator',
+      description:
+        'Automates email generation with templates, CSV pipelines, and a clean CLI.',
+      image: 'https://via.placeholder.com/400x300',
+      technologies: ['Python', 'CLI'],
+      liveLink: '#',
+      githubLink: gh('Email_Generator'),
+    },
+    {
+      title: 'Image-to-Text-Converter',
+      description:
+        'Flutter app that extracts text from images via OCR, with export options.',
+      image: 'https://via.placeholder.com/400x300',
+      technologies: ['Flutter', 'Dart'],
+      liveLink: '#',
+      githubLink: gh('Image-to-Text-Converter'),
+    },
+    {
+      title: 'ai_stock_analysis_and_investment_portfolie',
+      description:
+        'AI-driven stock analysis and portfolio optimization with notebooks, backend, and frontend.',
+      image: 'https://via.placeholder.com/400x300',
+      technologies: ['Python', 'React', 'ML'],
+      liveLink: '#',
+      githubLink: gh('ai_stock_analysis_and_investment_portfolie'),
+    },
   ];
 
-  const displayProjects = useMemo(() => {
-    const featured = (projects || []).map((project) => ({
-      ...project,
-      repoUrl: resolveRepoUrl(project),
-      isFeatured: true,
-    }));
-
-    const featuredKeys = new Set(
-      featured.map((project) => normalize(project.repoUrl || project.title))
-    );
-
-    const repoProjects = (allRepos || [])
-      .filter((repo) => !repo.fork)
-      .filter((repo) => !featuredKeys.has(normalize(repo.html_url)) && !featuredKeys.has(normalize(repo.name)))
-      .map((repo) => ({
-        title: repo.name,
-        date: `Updated ${new Date(repo.updated_at).toLocaleDateString()}`,
-        summary: describeRepo(repo),
-        tags: repo.language ? [repo.language] : [],
-        bullets: repoBullets(repo),
-        repoUrl: repo.html_url,
-        isFeatured: false,
-      }));
-
-    return [...featured, ...repoProjects];
-  }, [projects, allRepos, resolveRepoUrl]);
-
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+    <Container maxWidth="lg" sx={{ py: 8 }}>
       <Typography
         variant="h3"
         component="h1"
@@ -124,88 +83,71 @@ const Projects = () => {
           textAlign: 'center',
           mb: 6,
           fontWeight: 'bold',
-          background: 'linear-gradient(120deg, #e5f3ff 0%, #00e5ff 45%, #7cffA5 100%)',
+          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
           backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          textFillColor: 'transparent',
         }}
       >
-        Projects
+        My Projects
       </Typography>
 
       <Grid container spacing={4}>
-        {displayProjects.map((project) => {
-          const repoUrl = project.repoUrl || resolveRepoUrl(project);
-          return (
-          <Grid item key={`${project.title}-${project.date || ''}`} xs={12} md={6}>
+        {projects.map((project, index) => (
+          <Grid item key={index} xs={12} sm={6} md={4}>
             <Card
               sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                transition: 'transform 0.2s',
                 '&:hover': {
                   transform: 'translateY(-8px)',
-                  boxShadow: '0 0 40px rgba(0, 229, 255, 0.25)',
                 },
               }}
             >
-              <Box
-                sx={{
-                  px: 3,
-                  py: 3,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-end',
-                  background:
-                    'linear-gradient(140deg, rgba(0,229,255,0.22), rgba(255,138,0,0.2))',
-                  borderBottom: '1px solid rgba(255,255,255,0.08)',
-                }}
-              >
-                <Box>
-                  <Typography variant="h6">{project.title}</Typography>
-                  {project.date && (
-                    <Typography variant="caption" color="text.secondary">
-                      {project.date}
-                    </Typography>
-                  )}
-                </Box>
-                {repoUrl && (
-                  <Button size="small" color="primary" href={repoUrl} target="_blank">
-                    Repo
-                  </Button>
-                )}
-              </Box>
+              <CardMedia
+                component="img"
+                height="200"
+                image={project.image}
+                alt={project.title}
+              />
               <CardContent sx={{ flexGrow: 1 }}>
-                {project.summary && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {project.summary}
-                  </Typography>
-                )}
-                <Stack spacing={0.8} sx={{ mb: 2 }}>
-                  {(project.bullets || []).slice(0, 3).map((bullet) => (
-                    <Typography key={bullet} variant="body2" color="text.secondary">
-                      • {bullet}
+                <Typography gutterBottom variant="h5" component="h2">
+                  {project.title}
+                </Typography>
+                <Typography color="text.secondary" paragraph>
+                  {project.description}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  {project.technologies.map((tech, i) => (
+                    <Typography
+                      key={i}
+                      variant="caption"
+                      sx={{
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                      }}
+                    >
+                      {tech}
                     </Typography>
                   ))}
-                </Stack>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {(project.tags || []).map((tag) => (
-                    <Chip key={tag} label={tag} size="small" />
-                  ))}
-                </Stack>
+                </Box>
               </CardContent>
+              <CardActions>
+                <Button size="small" color="primary" href={project.liveLink} target="_blank">
+                  Live Demo
+                </Button>
+                <Button size="small" color="primary" href={project.githubLink} target="_blank">
+                  GitHub
+                </Button>
+              </CardActions>
             </Card>
           </Grid>
-        );
-        })}
+        ))}
       </Grid>
-
-      {loadingRepos && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-          Loading more GitHub projects…
-        </Typography>
-      )}
     </Container>
   );
 };
